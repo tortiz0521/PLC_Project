@@ -20,7 +20,7 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
         });
 
         scope.defineFunction("logarithm", 1, args -> {
-            BigDecimal bd = requireType(BigDecimal.class, Environment.create(args.getFirst()));
+            BigDecimal bd = requireType(BigDecimal.class, Environment.create(args.getFirst().getValue()));
             BigDecimal result = BigDecimal.valueOf(Math.log(bd.doubleValue()));
             return Environment.create(result);
         });
@@ -106,7 +106,8 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
             case Ast.Expression.Binary binary -> visit(binary);
             case Ast.Expression.Access access -> visit(access);
             case Ast.Expression.Function function -> visit(function);
-            default -> visit(ast.getExpression());
+            case Ast.Expression.PlcList PlcList -> visit(PlcList);
+            default -> throw new RuntimeException("Invalid Expression given.");
         };
         // throw new UnsupportedOperationException(); //TODO
     }

@@ -419,6 +419,10 @@ final class InterpreterTests {
                 Arguments.of("Print",
                         new Ast.Expression.Function("print", Arrays.asList(new Ast.Expression.Literal("Hello, World!"))),
                         Environment.NIL.getValue()
+                ),
+                Arguments.of("Logarithm",
+                        new Ast.Expression.Function("logarithm", Arrays.asList(new Ast.Expression.Literal(BigDecimal.valueOf(Math.E)))),
+                        BigDecimal.valueOf(1.0)
                 )
         );
     }
@@ -436,6 +440,7 @@ final class InterpreterTests {
 
         test(ast, expected, new Scope(null));
     }
+
 
     private static Scope test(Ast ast, Object expected, Scope scope) {
         Interpreter interpreter = new Interpreter(scope);
