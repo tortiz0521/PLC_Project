@@ -26,7 +26,9 @@ public final class Analyzer implements Ast.Visitor<Void> {
 
     @Override
     public Void visit(Ast.Source ast) {
-        throw new UnsupportedOperationException();  // TODO
+
+        //throw new UnsupportedOperationException();  // TODO
+        return null;
     }
 
     @Override

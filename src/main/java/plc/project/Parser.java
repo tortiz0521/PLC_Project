@@ -89,6 +89,13 @@ public final class Parser {
 
         String lit = tokens.get(-1).getLiteral();
 
+        //New type declarations:
+        if(!match(":") && !match(Token.Type.IDENTIFIER)) {
+            throw new ParseException("Invalid declaration of Global 'LIST', bad type declaration: ", tokens.get(-1).getIndex());
+        }
+
+        String type = tokens.get(-1).getLiteral();
+
         if(!match("=")) {
             throw new ParseException("Invalid declaration of Global 'LIST', must be initialized to a value: ", tokens.get(-1).getIndex());
         }
@@ -99,12 +106,11 @@ public final class Parser {
 
         Ast.Expression list = parsePlcList();
         if(match("]")) {
-            return new Ast.Global(lit, true, Optional.of(list));
+            return new Ast.Global(lit, type, true, Optional.of(list));
         }
         else {
             throw new ParseException("Invalid assignment of Global 'LIST': ", tokens.get(-1).getIndex());
         }
-        // throw new UnsupportedOperationException(); //TODO
     }
 
     private Ast.Expression parsePlcList() {
@@ -129,12 +135,19 @@ public final class Parser {
 
         String lit = tokens.get(-1).getLiteral();
 
+        //New type declarations:
+        if(!match(":") || !match(Token.Type.IDENTIFIER)) {
+            throw new ParseException("Invalid declaration of Global 'LIST', bad type declaration: ", tokens.get(-1).getIndex());
+        }
+
+        String type = tokens.get(-1).getLiteral();
+
         if(match("=")) {
             Ast.Expression e = parseExpression();
-            return new Ast.Global(lit, true, Optional.of(e));
+            return new Ast.Global(lit, type, true, Optional.of(e));
         }
         else {
-            return new Ast.Global(lit, true, Optional.empty());
+            return new Ast.Global(lit, type, true, Optional.empty());
         }
     }
 
@@ -149,12 +162,19 @@ public final class Parser {
 
         String lit = tokens.get(-1).getLiteral();
 
+        //New type declarations:
+        if(!match(":") || !match(Token.Type.IDENTIFIER)) {
+            throw new ParseException("Invalid declaration of Global 'LIST', bad type declaration: ", tokens.get(-1).getIndex());
+        }
+
+        String type = tokens.get(-1).getLiteral();
+
         if(!match("=")) {
             throw new ParseException("Invalid IMMUTABLE declaration, missing '=': ", tokens.get(-1).getIndex());
         }
 
         Ast.Expression e = parseExpression();
-        return new Ast.Global(lit, false, Optional.of(e));
+        return new Ast.Global(lit, type, false, Optional.of(e));
     }
 
     /**
@@ -167,25 +187,43 @@ public final class Parser {
         }
 
         String lit = tokens.get(-1).getLiteral();
-        List<String> ids = new ArrayList<>();
+        List<String> params = new ArrayList<>(), pTypes = new ArrayList<>();
 
         if(!match("(")) {
             throw new ParseException("Invalid function declaration, missing open parentheses: ", tokens.get(-1).getIndex());
         }
 
         if(match(Token.Type.IDENTIFIER)) {
-            ids.add(tokens.get(-1).getLiteral());
+            params.add(tokens.get(-1).getLiteral());
+            //New type declarations:
+            if(!match(":") || !match(Token.Type.IDENTIFIER)) {
+                throw new ParseException("Invalid declaration of Global 'LIST', bad type declaration: ", tokens.get(-1).getIndex());
+            }
+            pTypes.add(tokens.get(-1).getLiteral());
+
             while(match(",")) {
                 if(!match(Token.Type.IDENTIFIER)) {
                     throw new ParseException("Invalid identifier in function signature: ", tokens.get(-1).getIndex());
                 }
-
-                ids.add(tokens.get(-1).getLiteral());
+                params.add(tokens.get(-1).getLiteral());
+                //New type declarations:
+                if(!match(":") || !match(Token.Type.IDENTIFIER)) {
+                    throw new ParseException("Invalid declaration of Global 'LIST', bad type declaration: ", tokens.get(-1).getIndex());
+                }
+                pTypes.add(tokens.get(-1).getLiteral());
             }
         }
 
         if(!match(")")) {
             throw new ParseException("Invalid function declaration, missing closing parentheses: ", tokens.get(-1).getIndex());
+        }
+
+        String rT = null;
+        if(match(":")) {
+            if(!match(Token.Type.IDENTIFIER)) {
+                throw new ParseException("Return type is missing in type declaration or is not a valid identifier.", tokens.get(-1).getIndex());
+            }
+            rT = tokens.get(-1).getLiteral();
         }
 
         if(!match("DO")) {
@@ -198,7 +236,7 @@ public final class Parser {
             throw new ParseException("Invalid function declaration, missing 'END': ", tokens.get(-1).getIndex());
         }
 
-        return new Ast.Function(lit, ids, statements);
+        return new Ast.Function(lit, params, pTypes, Optional.ofNullable(rT), statements);
         // throw new UnsupportedOperationException(); //TODO
     }
 
@@ -272,16 +310,25 @@ public final class Parser {
         }
 
         String lit = tokens.get(-1).getLiteral();
+        //New type declarations:
+        String type = null;
+        if(match(":")) {
+            if(!match(Token.Type.IDENTIFIER))
+                throw new ParseException("Invalid declaration of Global 'LIST', bad type declaration: ", tokens.get(-1).getIndex());
+
+            type = tokens.get(-1).getLiteral();
+        }
+
         if(match("=")) {
             Ast.Expression e = parseExpression();
             if(!match(";")) {
                 throw new ParseException("Invalid DECLARATION statement, missing ';': ", tokens.get(-1).getIndex());
             }
 
-            return new Ast.Statement.Declaration(lit, Optional.of(e));
+            return new Ast.Statement.Declaration(lit, Optional.ofNullable(type), Optional.of(e));
         }
 
-        return new Ast.Statement.Declaration(lit, Optional.empty());
+        return new Ast.Statement.Declaration(lit, Optional.ofNullable(type), Optional.empty());
         // throw new UnsupportedOperationException(); //TODO
     }
 
