@@ -35,7 +35,7 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
         List<Ast.Global> globals = ast.getGlobals();
         List<Ast.Function> funcs = ast.getFunctions();
         for(Ast.Global var : globals) {
-            scope.defineVariable(var.getName(), var.getMutable(), visit(var.getValue().orElse(null)));
+            visit(var);
         }
 
         for(Ast.Function fun : funcs) {
