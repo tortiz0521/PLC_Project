@@ -38,10 +38,7 @@ public final class Generator implements Ast.Visitor<Void> {
         newline(++indent);
         for(int i = 0; i < ast.getGlobals().size(); i++) {
             print(ast.getGlobals().get(i));
-
-            if(i + 1 == ast.getGlobals().size()) {
-                newline(0);
-            }
+            newline(indent);
         }
 
         print("public static void main(String[] args) {");
@@ -66,17 +63,19 @@ public final class Generator implements Ast.Visitor<Void> {
 
     @Override
     public Void visit(Ast.Global ast) {
-        print(ast.getVariable().getType().getJvmName());
-
         if (ast.getValue().isPresent()) {
             if(ast.getValue().get() instanceof Ast.Expression.PlcList) {
-                print("[]");
+                print(ast.getVariable().getType().getJvmName(), "[]");
             }
+            else if(ast.getMutable()) {
+                print("final ", ast.getVariable().getType().getJvmName());
+            }
+
             print(" ", ast.getName(),
                 " = ", ast.getValue().get());
         }
         else {
-            print(" ", ast.getName());
+            print(ast.getVariable().getType().getJvmName(), " ", ast.getName());
         }
 
         print(";");
@@ -253,7 +252,7 @@ public final class Generator implements Ast.Visitor<Void> {
                     newline(indent);
                 }
                 visit(ast.getStatements().get(i));
-                newline(indent);
+                //newline(indent);
             }
             newline(--indent);
         }
