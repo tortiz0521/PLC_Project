@@ -90,7 +90,10 @@ public final class Parser {
         String lit = tokens.get(-1).getLiteral();
 
         //New type declarations:
-        if(!match(":") && !match(Token.Type.IDENTIFIER)) {
+        if(!match(":")) {
+            throw new ParseException("Invalid declaration of Global 'LIST', bad type declaration: ", tokens.get(-1).getIndex());
+        }
+        if(!match(Token.Type.IDENTIFIER)) {
             throw new ParseException("Invalid declaration of Global 'LIST', bad type declaration: ", tokens.get(-1).getIndex());
         }
 
@@ -136,7 +139,10 @@ public final class Parser {
         String lit = tokens.get(-1).getLiteral();
 
         //New type declarations:
-        if(!match(":") || !match(Token.Type.IDENTIFIER)) {
+        if(!match(":")) {
+            throw new ParseException("Invalid declaration of Global 'LIST', bad type declaration: ", tokens.get(-1).getIndex());
+        }
+        if(!match(Token.Type.IDENTIFIER)) {
             throw new ParseException("Invalid declaration of Global 'LIST', bad type declaration: ", tokens.get(-1).getIndex());
         }
 
@@ -163,7 +169,10 @@ public final class Parser {
         String lit = tokens.get(-1).getLiteral();
 
         //New type declarations:
-        if(!match(":") || !match(Token.Type.IDENTIFIER)) {
+        if(!match(":")) {
+            throw new ParseException("Invalid declaration of Global 'LIST', bad type declaration: ", tokens.get(-1).getIndex());
+        }
+        if(!match(Token.Type.IDENTIFIER)) {
             throw new ParseException("Invalid declaration of Global 'LIST', bad type declaration: ", tokens.get(-1).getIndex());
         }
 
@@ -196,7 +205,10 @@ public final class Parser {
         if(match(Token.Type.IDENTIFIER)) {
             params.add(tokens.get(-1).getLiteral());
             //New type declarations:
-            if(!match(":") || !match(Token.Type.IDENTIFIER)) {
+            if(!match(":")) {
+                throw new ParseException("Invalid declaration of Global 'LIST', bad type declaration: ", tokens.get(-1).getIndex());
+            }
+            if(!match(Token.Type.IDENTIFIER)) {
                 throw new ParseException("Invalid declaration of Global 'LIST', bad type declaration: ", tokens.get(-1).getIndex());
             }
             pTypes.add(tokens.get(-1).getLiteral());
@@ -207,7 +219,10 @@ public final class Parser {
                 }
                 params.add(tokens.get(-1).getLiteral());
                 //New type declarations:
-                if(!match(":") || !match(Token.Type.IDENTIFIER)) {
+                if(!match(":")) {
+                    throw new ParseException("Invalid declaration of Global 'LIST', bad type declaration: ", tokens.get(-1).getIndex());
+                }
+                if(!match(Token.Type.IDENTIFIER)) {
                     throw new ParseException("Invalid declaration of Global 'LIST', bad type declaration: ", tokens.get(-1).getIndex());
                 }
                 pTypes.add(tokens.get(-1).getLiteral());
@@ -394,10 +409,6 @@ public final class Parser {
             return new Ast.Statement.Case(Optional.of(value), parseBlock());
         }
         else if(match("DEFAULT")) {
-            if (!match(":")) {
-                throw new ParseException("Invalid CASE statement, missing ':': ", tokens.get(-1).getIndex());
-            }
-
             return new Ast.Statement.Case(Optional.empty(), parseBlock());
         }
         else {

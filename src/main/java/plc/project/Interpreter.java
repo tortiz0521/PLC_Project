@@ -55,7 +55,7 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
     public Environment.PlcObject visit(Ast.Global ast) {
         Environment.PlcObject temp;
         if(ast.getValue().isPresent()) {
-            temp = visit(ast.getValue().get());
+            temp = Environment.create(visit(ast.getValue().get()).getValue());
         }
         else {
             temp = Environment.NIL;
@@ -82,13 +82,10 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
                     visit(ast.getStatements().get(i));
                 }
 
-                if(ast.getName().equals("main")) {
-                    if(!(ast.getStatements().getLast() instanceof Ast.Statement.Return)) {
-                        return Environment.NIL;
-                    }
+                if(ast.getStatements().getLast() instanceof Ast.Statement.Return r) {
+                    return Environment.create(visit(r).getValue());
                 }
-
-                return Environment.create(visit(ast.getStatements().getLast()).getValue());
+                else return Environment.NIL;
             });
         }
         finally {
@@ -100,7 +97,7 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
 
     @Override
     public Environment.PlcObject visit(Ast.Statement.Expression ast) throws RuntimeException {
-        return switch(ast.getExpression()) {
+        switch(ast.getExpression()) {
             case Ast.Expression.Literal literal -> visit(literal);
             case Ast.Expression.Group group -> visit(group);
             case Ast.Expression.Binary binary -> visit(binary);
@@ -109,7 +106,8 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
             case Ast.Expression.PlcList PlcList -> visit(PlcList);
             default -> throw new RuntimeException("Invalid Expression given.");
         };
-        // throw new UnsupportedOperationException(); //TODO
+
+        return Environment.NIL;
     }
 
     @Override
@@ -122,7 +120,6 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
         }
 
         return Environment.NIL;
-        // throw new UnsupportedOperationException(); //TODO (in lecture)
     }
 
     @Override
@@ -217,7 +214,6 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
         }
 
         return Environment.NIL;
-        // throw new UnsupportedOperationException(); //TODO (in lecture)
     }
 
     @Override
@@ -243,21 +239,30 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
     public Environment.PlcObject visit(Ast.Expression.Binary ast) {
         return Environment.create(switch(ast.getOperator()) {
             case "+" -> {
-               if(visit(ast.getLeft()).getValue() instanceof BigDecimal && visit(ast.getRight()).getValue() instanceof BigDecimal) {
-                   yield requireType(BigDecimal.class, visit(ast.getLeft())).add(requireType(BigDecimal.class, visit(ast.getRight())));
+               if(visit(ast.getLeft()).getValue() instanceof BigDecimal lbd && visit(ast.getRight()).getValue() instanceof BigDecimal rbd) {
+                   yield lbd.add(rbd);
                }
-
-               if(visit(ast.getLeft()).getValue() instanceof BigInteger && visit(ast.getRight()).getValue() instanceof BigInteger) {
-                   yield requireType(BigInteger.class, visit(ast.getLeft())).add(requireType(BigInteger.class, visit(ast.getRight())));
+               else if(visit(ast.getLeft()).getValue() instanceof BigInteger lbi && visit(ast.getRight()).getValue() instanceof BigInteger rbi) {
+                   yield lbi.add(rbi);
                }
-
-               if(visit(ast.getLeft()).getValue() instanceof String && visit(ast.getRight()).getValue() instanceof String) {
-                   yield requireType(String.class, visit(ast.getLeft())) + requireType(String.class, visit(ast.getRight()));
+               else if(visit(ast.getLeft()).getValue() instanceof String ls && visit(ast.getRight()).getValue() instanceof String rs) {
+                   yield ls + rs;
                }
-
-               throw new RuntimeException("Invalid additive operation, values are not of the same class");
+               else {
+                   throw new RuntimeException("Invalid additive operation, values are not of the same class.");
+               }
             }
-            case "-" -> requireType(BigDecimal.class, visit(ast.getLeft())).subtract(requireType(BigDecimal.class, visit(ast.getRight())));
+            case "-" -> {
+                if(visit(ast.getLeft()).getValue() instanceof BigDecimal lbd) {
+                    yield lbd.subtract(requireType(BigDecimal.class, visit(ast.getRight())));
+                }
+                else if(visit(ast.getLeft()).getValue() instanceof BigInteger lbi) {
+                    yield lbi.subtract(requireType(BigInteger.class, visit(ast.getRight())));
+                }
+                else {
+                    throw new RuntimeException("Should be unreachable.");
+                }
+            }
             case "*" -> {
                 if(visit(ast.getLeft()).getValue() instanceof BigDecimal && visit(ast.getRight()).getValue() instanceof BigDecimal) {
                     yield requireType(BigDecimal.class, visit(ast.getLeft())).multiply(requireType(BigDecimal.class, visit(ast.getRight())));
@@ -282,27 +287,44 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
             case "<" -> requireType(Comparable.class, visit(ast.getLeft())).compareTo(requireType(visit(ast.getLeft()).getValue().getClass(), visit(ast.getRight()))) < 0;
             case ">" -> requireType(Comparable.class, visit(ast.getLeft())).compareTo(requireType(visit(ast.getLeft()).getValue().getClass(), visit(ast.getRight()))) > 0;
             case "==" -> visit(ast.getLeft()).equals(requireType(visit(ast.getLeft()).getValue().getClass(), visit(ast.getRight())));
-            case "!=" -> !visit(ast.getLeft()).equals(requireType(visit(ast.getLeft()).getValue().getClass(), visit(ast.getRight())));
+            case "!=" -> {
+                var lhs = visit(ast.getLeft());
+                var rhs = visit(ast.getRight());
+                requireType(lhs.getValue().getClass(), rhs);
+                yield !lhs.getValue().equals(rhs.getValue());
+
+                //yield !visit(ast.getLeft()).equals(requireType(visit(ast.getLeft()).getValue().getClass(), visit(ast.getRight())));
+            }
             case "/" -> {
-                BigDecimal l = requireType(BigDecimal.class, visit(ast.getLeft())), r = requireType(BigDecimal.class, visit(ast.getRight()));
+                var l = visit(ast.getLeft());
+                var r = visit(ast.getRight());
+
                 try {
-                    yield l.divide(r, RoundingMode.HALF_EVEN);
-                }
-                catch(ArithmeticException err) {
+                    if (l.getValue() instanceof BigDecimal lbd) {
+                        BigDecimal rbd = requireType(lbd.getClass(), r);
+                        yield lbd.divide(rbd, RoundingMode.HALF_EVEN);
+                    }
+                    else if(l.getValue() instanceof BigInteger lbi) {
+                        BigInteger rbi = requireType(lbi.getClass(), r);
+                        yield lbi.divide(rbi);
+                    }
+                    else {
+                        throw new RuntimeException("Should not be possible to get here.");
+                    }
+                } catch(ArithmeticException err) {
                     throw new RuntimeException("Division error: " + err.getMessage());
                 }
             }
             case "^" -> {
                 BigInteger l = requireType(BigInteger.class, visit(ast.getLeft())), r = requireType(BigInteger.class, visit(ast.getRight()));
                 BigInteger result = l;
-                for(int i = 0; i < r.intValue(); i++) {
+                for(int i = 1; i < r.intValue(); i++) {
                     result = result.multiply(l);
                 }
-                yield result;
+                yield result.intValueExact();
             }
             default -> throw new RuntimeException("Invalid binary operation.");
         });
-        // throw new UnsupportedOperationException(); //TODO
     }
 
     @Override
