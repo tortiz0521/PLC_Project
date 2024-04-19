@@ -62,7 +62,6 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
         }
         scope.defineVariable(ast.getName(), ast.getMutable(), temp);
         return Environment.NIL;
-        // throw new UnsupportedOperationException(); //TODO
     }
 
     @Override
@@ -105,7 +104,7 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
             case Ast.Expression.Function function -> visit(function);
             case Ast.Expression.PlcList PlcList -> visit(PlcList);
             default -> throw new RuntimeException("Invalid Expression given.");
-        };
+        }
 
         return Environment.NIL;
     }
@@ -140,7 +139,6 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
         }
 
         return Environment.NIL;
-        // throw new UnsupportedOperationException(); //TODO
     }
 
     @Override
@@ -186,7 +184,6 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
         }
 
         return Environment.NIL;
-        // throw new UnsupportedOperationException(); //TODO
     }
 
     @Override
@@ -196,7 +193,6 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
         }
 
         return Environment.NIL;
-        // throw new UnsupportedOperationException(); //TODO
     }
 
     @Override
@@ -227,7 +223,6 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
             return Environment.NIL;
         }
         return Environment.create(ast.getLiteral());
-        // throw new UnsupportedOperationException(); //TODO
     }
 
     @Override
@@ -292,8 +287,6 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
                 var rhs = visit(ast.getRight());
                 requireType(lhs.getValue().getClass(), rhs);
                 yield !lhs.getValue().equals(rhs.getValue());
-
-                //yield !visit(ast.getLeft()).equals(requireType(visit(ast.getLeft()).getValue().getClass(), visit(ast.getRight())));
             }
             case "/" -> {
                 var l = visit(ast.getLeft());
@@ -338,7 +331,6 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
         else {
             return Environment.create(var.getValue());
         }
-        // throw new UnsupportedOperationException(); //TODO
     }
 
     @Override
@@ -350,7 +342,6 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
         }
 
         return func.invoke(args);
-        // throw new UnsupportedOperationException(); //TODO
     }
 
     @Override
@@ -361,7 +352,6 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
         }
 
         return Environment.create(list);
-        // throw new UnsupportedOperationException(); //TODO
     }
 
     /**

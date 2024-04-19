@@ -51,9 +51,9 @@ public final class Generator implements Ast.Visitor<Void> {
 
         for(int i = 0; i < ast.getFunctions().size(); i++) {
             print(ast.getFunctions().get(i));
+            newline(0);
         }
 
-        newline(0);
         newline(0);
         print("}");
 
@@ -67,7 +67,7 @@ public final class Generator implements Ast.Visitor<Void> {
             if(ast.getValue().get() instanceof Ast.Expression.PlcList) {
                 print(ast.getVariable().getType().getJvmName(), "[]");
             }
-            else if(ast.getMutable()) {
+            else if(!ast.getMutable()) {
                 print("final ", ast.getVariable().getType().getJvmName());
             }
 
