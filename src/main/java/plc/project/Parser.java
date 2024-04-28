@@ -34,7 +34,7 @@ public final class Parser {
         List<Ast.Function> functions = new ArrayList<>();
 
         while(tokens.has(0)) {
-            if (match("FUN")) {
+            if (peek("FUN")) {
                 functions.add(parseFunction());
             } else if(peek("VAL") || peek("VAR") || peek("LIST")) {
                 globals.add(parseGlobal());
@@ -195,9 +195,15 @@ public final class Parser {
             throw new ParseException("Invalid function declaration, missing identifier: ", tokens.get(-1).getIndex());
         }
 
+        if(!match(Token.Type.IDENTIFIER)) {
+            throw new ParseException("Invalid function declaration, missing naming identifier: ", tokens.get(-1).getIndex());
+        }
+
         String lit = tokens.get(-1).getLiteral();
+        System.out.println(lit);
         List<String> params = new ArrayList<>(), pTypes = new ArrayList<>();
 
+        System.out.println(tokens.get(0).getLiteral());
         if(!match("(")) {
             throw new ParseException("Invalid function declaration, missing open parentheses: ", tokens.get(-1).getIndex());
         }
@@ -261,12 +267,12 @@ public final class Parser {
      */
     public List<Ast.Statement> parseBlock() throws ParseException {
         List<Ast.Statement> list = new ArrayList<>();
-        if(peek("END") || peek("ELSE")) {
+        if(peek("END") || peek("ELSE") || peek("CASE") || peek("DEFAULT")) {
             return list;
         }
 
         list.add(parseStatement());
-        while(!peek("END") && !peek("ELSE")) {
+        while(!peek("END") && !peek("ELSE") && !peek("CASE") && !peek("DEFAULT")) {
             list.add(parseStatement());
         }
 
@@ -467,7 +473,9 @@ public final class Parser {
         Ast.Expression left = parseComparisonExpression();
 
         while(match("&&") || match("||")) {
+            //if(match("&") || match("|"))
             left = new Ast.Expression.Binary(tokens.get(-1).getLiteral(), left, parseComparisonExpression());
+            //else throw new ParseException("Invalid Logical Expression: ", tokens.get(0).getIndex());
         }
 
         return left;
@@ -519,8 +527,6 @@ public final class Parser {
      * not strictly necessary.
      */
     public Ast.Expression parsePrimaryExpression() throws ParseException {
-        //System.out.println(tokens.get(0).getType());
-
         if(match("NIL")) {
             return new Ast.Expression.Literal(null);
         }
@@ -603,7 +609,7 @@ public final class Parser {
                 .replace("\\n", "\n")
                 .replace("\\t", "\t")
                 .replace("\\r", "\r")
-                .replace("\\b", "\b")
+                .replace("\\\\b", "\b")
                 .replace("\\\\", "\\")
                 .replace("\\\"", "\"");
     }

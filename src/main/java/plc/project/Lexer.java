@@ -32,7 +32,9 @@ public final class Lexer {
         var tokens = new ArrayList<Token>();
 
         while(chars.has(0)){
-            tokens.add(lexToken());
+            Token t = lexToken();
+            if(t != null)
+                tokens.add(t);
         }
 
         return tokens;
@@ -60,19 +62,14 @@ public final class Lexer {
         else if(peek("\"")){
             return lexString();
         }
-        else if(peek(".")){
-            return lexOperator();
-        }
-        else{
-            throw new ParseException("Unsupported token.", 0);
-        }
+        else return lexOperator();
     }
 
     public Token lexIdentifier() {
         //throw new UnsupportedOperationException(); //TODO
         while(match("[A-Za-z0-9_-]")){
             if(chars.has(0) && !peek("[A-Za-z0-9_-]")){
-                if(!peek("[ \b\\n\\r\\t\\;]")){
+                if(!peek("[ \\\\b\\n\\r\\t;]|.")){
                     throw new ParseException("Invalid identifier.", chars.index);
                 }
             }
@@ -81,28 +78,27 @@ public final class Lexer {
     }
 
     public Token lexNumber() {
-        //throw new UnsupportedOperationException(); //TODO
         match("-");
-        if(chars.get(0) == '0' && peek("0")){
-            throw new ParseException("Invalid number.", chars.index);
+        if(peek("0")) {
+            match("0");
+            if(match("[0-9]")) {
+                throw new ParseException("Invalid number: ", chars.index);
+            }
         }
 
         while(match("[0-9]")){
             if(chars.has(0) && !peek("[0-9]")){
-                if(!peek("[ \b\\n\\r\\t;\\.]")){
+                if(!peek("[ \b\\n\\r\\t;]|.")){
                     throw new ParseException("Invalid number.", chars.index);
                 }
             }
         }
 
-        if(match("\\.")){
-            if(!peek("[0-9]")){
-                throw new ParseException("Invalid number.", chars.index);
-            }
-
+        if(peek("\\.", "[0-9]")){
+            match("\\.");
             while(match("[0-9]")){
                 if(chars.has(0) && !peek("[0-9]")){
-                    if(!peek("[ \b\\n\\r\\t;]")){
+                    if(!peek("[ \\\\b\\n\\r\\t;]|.")){
                         throw new ParseException("Invalid number.", chars.index);
                     }
                 }
@@ -141,7 +137,6 @@ public final class Lexer {
     }
 
     public Token lexString() {
-        //throw new UnsupportedOperationException(); //TODO
         chars.advance();
         while(true){
             if(peek("\\\\")){
@@ -176,13 +171,26 @@ public final class Lexer {
     }
 
     public Token lexOperator() {
-        //throw new UnsupportedOperationException(); //TODO
         if(match("[<>=!]")){
             if(peek("=")){
                 match("=");
             }
         }
-        else{
+        else if(match("[ \\\\b\\n\\r\\t]")) {
+            chars.skip();
+            return null;
+        }
+        else if(match("&")) {
+            if(!match("&")) {
+                throw new ParseException("Invalid operator: ", chars.index);
+            }
+        }
+        else if(match("|")) {
+            if(!match("|")) {
+                throw new ParseException("Invalid operator: ", chars.index);
+            }
+        }
+        else {
             chars.advance();
         }
 

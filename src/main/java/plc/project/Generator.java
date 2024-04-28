@@ -306,7 +306,6 @@ public final class Generator implements Ast.Visitor<Void> {
         }
 
         return null;
-        // throw new UnsupportedOperationException(); //TODO
     }
 
     @Override
